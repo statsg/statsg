@@ -21,31 +21,6 @@ func (m Metric) Pack() []byte {
 }
 
 func main() {
-	// req := coap.Message{
-	// 	Type:      coap.Confirmable,
-	// 	Code:      coap.GET,
-	// 	MessageID: 12345,
-	// 	Payload:   []byte("hello, world!"),
-	// }
-
-	// req.SetOption(coap.ETag, "weetag")
-	// req.SetOption(coap.MaxAge, 3)
-	// req.SetPathString("/some/path")
-
-	// c, err := coap.Dial("udp", "localhost:5683")
-	// if err != nil {
-	// 	log.Fatalf("Error dialing: %v", err)
-	// }
-
-	// rv, err := c.Send(req)
-	// if err != nil {
-	// 	log.Fatalf("Error sending request: %v", err)
-	// }
-
-	// if rv != nil {
-	// 	log.Printf("Response payload: %s", rv.Payload)
-	// }
-
 	m := Metric{
 		Fqdn:    0x00000001,
 		Service: 0x00000001,
@@ -57,8 +32,10 @@ func main() {
 		Type:      coap.Confirmable,
 		Code:      coap.GET,
 		MessageID: 1,
-		Payload:   m.Pack(),
+		Payload:   []byte("com.example.api my_super_service endpoint_name.method.status_code"),
 	}
+
+	req.SetPathString("register_key")
 
 	c, err := coap.Dial("udp", "localhost:5683")
 	if err != nil {
@@ -66,6 +43,22 @@ func main() {
 	}
 
 	rv, err := c.Send(req)
+	if err != nil {
+		log.Fatalf("Error sending request: %v", err)
+	}
+
+	if rv != nil {
+		log.Printf("Response payload: %s", rv.Payload)
+	}
+
+	req = coap.Message{
+		Type:      coap.Confirmable,
+		Code:      coap.GET,
+		MessageID: 1,
+		Payload:   m.Pack(),
+	}
+
+	rv, err = c.Send(req)
 	if err != nil {
 		log.Fatalf("Error sending request: %v", err)
 	}
