@@ -2,3 +2,4 @@ package: github.com/statsg/statsg
 import:
 - package: github.com/spf13/viper
 - package: github.com/Sirupsen/logrus
+- package: github.com/dustin/go-coap
