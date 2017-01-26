@@ -9,9 +9,9 @@ import (
 
 // Metric is the layout of the metric payload from a client.
 type Metric struct {
-	Fqdn    uint16
+	Fqdn    uint8
 	Service uint8
-	Key     uint16
+	Key     uint8
 	Value   string
 }
 
@@ -49,6 +49,13 @@ func main() {
 
 	if rv != nil {
 		log.Printf("Response payload: %s", rv.Payload)
+	}
+
+	m = Metric{
+		Fqdn:    uint8(rv.Payload[0]),
+		Service: uint8(rv.Payload[1]),
+		Key:     uint8(rv.Payload[2]),
+		Value:   "T",
 	}
 
 	req = coap.Message{

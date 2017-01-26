@@ -17,38 +17,33 @@ func check(err error) {
 	}
 }
 
-// Metric is the layout of the metric payload from a client.
-type Metric struct {
-	Fqdn    uint16
-	Service uint8
-	Key     uint16
-	Value   string
+// KeyValue states the index of each part of the tree
+type KeyValue struct {
+	FqdnIndex    uint8
+	ServiceIndex uint8
+	KeyIndex     uint8
 }
 
-var tree []Fqdn
+var reverseMap = make(map[KeyValue]string) // A reverse mapping of the index keys to the metric key name
 
-// Fqdn is the base of the tree which links to `Service`s.
-// ie. com.example.api
-type Fqdn struct {
-	Name     string
-	Index    uint16
-	Services []Service
+// F is the FQDN struct
+type F struct {
+	Index    uint8
+	Services map[string]S
 }
 
-// Service is the name of the service, which links to `Key`s.
-// ie. my_super_service
-type Service struct {
-	Name  string
+// S is the Service struct
+type S struct {
 	Index uint8
-	Keys  []Key
+	Keys  map[string]K
 }
 
-// Key is the metric name.
-// ie. endpoint_name.method.status_code
-type Key struct {
-	Name  string
-	Index uint16
+// K is the Key struct
+type K struct {
+	Index uint8
 }
+
+var keyspace = make(map[string]F) // The root of the FQDN->Services->Keys mapping
 
 func main() {
 
@@ -67,7 +62,7 @@ func main() {
 	coap.ListenAndServe("udp", ":5683",
 		coap.FuncHandler(func(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Message {
 			fmt.Printf("Go message path=%q: %#v from %v\n", m.PathString(), m, a)
-			fmt.Printf("Payload: %#v\n\n", m.Payload)
+			fmt.Printf("Payload: %#v\n", m.Payload)
 			res := &coap.Message{
 				Type:      coap.Acknowledgement,
 				Code:      coap.Content,
@@ -77,26 +72,11 @@ func main() {
 			res.SetOption(coap.ContentFormat, coap.TextPlain)
 			if "register_key" == m.PathString() {
 				metricKey := registerKeyspace(m.Payload)
+				fmt.Printf("MetricKey: %#v\n\n", metricKey)
 
 				res.Payload = metricKey
-				// res := &coap.Message{
-				// 	Type:      coap.Acknowledgement,
-				// 	Code:      coap.Content,
-				// 	MessageID: m.MessageID,
-				// 	Token:     m.Token,
-				// 	Payload:   metricKey,
-				// }
-
 			} else {
 				res.Payload = []byte("Halp")
-				// res := &coap.Message{
-				// 	Type:      coap.Acknowledgement,
-				// 	Code:      coap.Content,
-				// 	MessageID: m.MessageID,
-				// 	Token:     m.Token,
-				// 	Payload:   []byte("Halp"),
-				// }
-				// res.SetOption(coap.ContentFormat, coap.TextPlain)
 			}
 			if m.IsConfirmable() {
 				return res
@@ -106,36 +86,11 @@ func main() {
 	)
 }
 
-// KeyValue states the index of each part of the tree
-type KeyValue struct {
-	FqdnIndex    uint16
-	ServiceIndex uint8
-	KeyIndex     uint16
-}
-
-var reverseMap = make(map[KeyValue]string)
-
-type F struct {
-	Index    uint16
-	Services map[string]S
-}
-
-type S struct {
-	Index uint8
-	Keys  map[string]K
-}
-
-type K struct {
-	Index uint16
-}
-
-var keyspace = make(map[string]F)
-
-// Keyspace := make(map[string]map[string]map[string]KeyValue)
-// var Fqdnspace map[]
-// rs map[string]map[time.Time]int
-// map[struct{s string, t time.Time}]int
-
+// registerKeyspace takes the incoming request payload
+// and ascertains if it already exists in the mapping,
+// else it will create the FQDN->Services->Keys mapping
+// as well as the reverse lookup of
+// {FQDN, Service, Key} => Full Metric Name
 func registerKeyspace(key []byte) []byte {
 	names := strings.Split(string(key), " ")
 	fmt.Println(names)
@@ -146,27 +101,30 @@ func registerKeyspace(key []byte) []byte {
 		if ok == true {
 			_, ok := s.Keys[names[2]]
 			if ok == false {
-				keyspace[names[0]].Services[names[1]].Keys[names[2]] = K{uint16(len(s.Keys) + 1)}
+				// Only the metric `Key` does not currently exist, so create it
+				keyspace[names[0]].Services[names[1]].Keys[names[2]] = K{uint8(len(s.Keys) + 1)}
 			}
 		} else {
+			// The `Service` and `Key` do not exist, so create them
 			keyspace[names[0]].Services[names[1]] = S{
 				uint8(len(f.Services) + 1),
 				map[string]K{
 					names[2]: K{
-						uint16(1),
+						uint8(1),
 					},
 				},
 			}
 		}
 	} else {
+		// The `Fqdn`, `Service`, and `Key` do not exist, so create them
 		keyspace[names[0]] = F{
-			uint16(len(keyspace) + 1),
+			uint8(len(keyspace) + 1),
 			map[string]S{
 				names[1]: S{
 					uint8(1),
 					map[string]K{
 						names[2]: K{
-							uint16(1),
+							uint8(1),
 						},
 					},
 				},
@@ -174,62 +132,12 @@ func registerKeyspace(key []byte) []byte {
 		}
 	}
 
-	return []byte(fmt.Sprintf("%v%v%v", keyspace[names[0]].Index,
-		keyspace[names[0]].Services[names[1]].Index,
-		keyspace[names[0]].Services[names[1]].Keys[names[2]].Index))
+	kv := KeyValue{
+		FqdnIndex:    keyspace[names[0]].Index,
+		ServiceIndex: keyspace[names[0]].Services[names[1]].Index,
+		KeyIndex:     keyspace[names[0]].Services[names[1]].Keys[names[2]].Index,
+	}
+	reverseMap[kv] = strings.Join(names, ".")
 
-	// _, ok := Keyspace[names[0]]
-	// if ok == nil {
-	// 	_, ok = Keyspace[names[0]][names[1]]
-	// 	if ok == nil {
-	// 		key, ok = Keyspace[names[0]][names[1]][names[2]]
-	// 		if ok == nil {
-	// 			return []byte(fmt.Sprintf("%v%v%v", key.FqdnIndex, key.ServiceIndex, key.KeyIndex)
-	// 		} else {
-	// 			Keyspace[names[0]][names[1]][names[2]] = KeyValue{
-	// 				FqdnIndex:
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// var fqdnIndex, keyIndex uint16
-	// var serviceIndex uint8
-	// for fqdn := range tree {
-	// 	if fqdn.Name == names[0] {
-	// 		fqdnIndex = fqdn.Index
-
-	// 		for service := range fqdn.Services {
-	// 			if service.Name == names[1] {
-	// 				serviceIndex = service.Index
-
-	// 				for key := range service.Keys {
-	// 					if key.Name == names[2] {
-	// 						keyIndex = key.Index
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// f := Fqdn{
-	// 	Name:  "com.example.api",
-	// 	Index: 0x0000001,
-	// 	Services: []Service{
-	// 		Service{
-	// 			Name:  "my_super_service",
-	// 			Index: 0x00000001,
-	// 			Keys: []Key{
-	// 				Key{
-	// 					Name:  "endpoint_name.method.status_code",
-	// 					Index: 0x00000001,
-	// 				},
-	// 			},
-	// 		},
-	// 	},
-	// }
-
-	// tree = append(tree, f)
-
-	// return []byte(fmt.Sprintf("%v.%v.%v", f.Name, f.Services[0].Name, f.Services[0].Keys[0].Name))
+	return []byte(fmt.Sprintf("%v%v%v", kv.FqdnIndex, kv.ServiceIndex, kv.KeyIndex))
 }

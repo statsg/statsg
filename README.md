@@ -44,11 +44,11 @@ as a tree could simplify it as
 ```
 | Field | Size    | Representation | Plaintext            |
 |----------------------------------------------------------
-|     1 | 2 bytes |    [0 - 2^16)  | com.example.api      |
+|     1 | 1 byte  |    [0 - 2^8)   | com.example.api      |
 |     2 | 1 byte  |    [0 - 2^8)   | service_name         |
-|     3 | 2 bytes |    [0 - 2^16)  | some.specific.metric |
+|     3 | 1 byte  |    [0 - 2^8)   | some.specific.metric |
 |     4 | n bytes | You metric val | Plaintext metric val |
 ```
 
-This would yield 65,535 FQDNs, 255 services per FQDN, and 65,535 metrics per service yielding
-1,099,511,627,776 keys in total expressed in 5 bytes.
+This would yield 255 FQDNs, 255 services per FQDN, and 255 metrics per service yielding
+16,777,216 keys in total expressed in 5 bytes.
