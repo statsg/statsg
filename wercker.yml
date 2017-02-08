@@ -24,13 +24,18 @@ build:
   steps:
     # Sets the go workspace and places you package
     # at the right place in the workspace tree
-    - setup-go-workspace
+    - setup-go-workspace:
+        package-dir: github.com/statsg/statsg
 
     # Gets the dependencies
     - script:
         name: go get
         code: |
-          go get
+          cd $WERCKER_SOURCE_DIR
+          go version
+          go get -u github.com/Masterminds/glide
+          export PATH=$WERCKER_SOURCE_DIR/bin:$PATH
+          glide install
 
     # Build the project
     - script:
@@ -42,4 +47,4 @@ build:
     - script:
         name: go test
         code: |
-          go test ./...
+          go test -v $(glide novendor)
