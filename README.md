@@ -1,12 +1,12 @@
 # statsg
 
-[![codebeat badge](https://codebeat.co/badges/53703c14-bc44-489d-b0ea-7e3d3b2d8d82)](https://codebeat.co/projects/github-com-statsg-statsg) [![circleci` badge](https://circleci.com/gh/statsg/statsg.svg?style=shield&circle-token=456ad54019146fcaa685adb00e91d7bb73f9d58e)](https://circleci.com/gh/statsg/statsg.svg?style=shield&circle-token=456ad54019146fcaa685adb00e91d7bb73f9d58e) [![Go Report Card](https://goreportcard.com/badge/github.com/statsg/statsg)](https://goreportcard.com/report/github.com/statsg/statsg) [![codecov](https://codecov.io/gh/statsg/statsg/branch/master/graph/badge.svg)](https://codecov.io/gh/statsg/statsg)
+[![codebeat badge](https://codebeat.co/badges/53703c14-bc44-489d-b0ea-7e3d3b2d8d82)](https://codebeat.co/projects/github-com-statsg-statsg) [![circleci` badge](https://circleci.com/gh/statsg/statsg.svg?style=shield&circle-token=456ad54019146fcaa685adb00e91d7bb73f9d58e)](https://circleci.com/gh/statsg/statsg.svg?style=shield&circle-token=456ad54019146fcaa685adb00e91d7bb73f9d58e) [![Go Report Card](https://goreportcard.com/badge/github.com/statsg/statsg)](https://goreportcard.com/report/github.com/statsg/statsg) [![codecov](https://codecov.io/gh/statsg/statsg/branch/master/graph/badge.svg)](https://codecov.io/gh/statsg/statsg) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A reimplementation of statsd to use CoAP as the transport mechanism, and dynamically compressed metric keys.
 
 ## Getting started
 
-This project requires Go to be installed. On OS X with Homebrew you can just run `brew install go`.
+This project requires Go to be installed. On OS X with Homebrew you can just run `brew install go`, then install [glide](https://github.com/Masterminds/glide).
 
 Running it then should be as simple as:
 
@@ -52,3 +52,14 @@ as a tree could simplify it as
 
 This would yield 255 FQDNs, 255 services per FQDN, and 255 metrics per service yielding
 16,777,216 keys in total expressed in 5 bytes.
+
+### Todo
+
+- [ ] Persistance for the keyspace
+- [ ] Windows make file
+- [ ] Statsd output writer
+- [ ] Direct WhisperDB writer
+
+### Presentations
+
+- [Post Hack-a-thon presentation](https://docs.google.com/presentation/d/18qABweNyxOXPynj0iUH6-h6LAdr6r5g-mxJRjKDU_wE/)
