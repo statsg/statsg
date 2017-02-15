@@ -48,13 +48,13 @@ func main() {
 	}
 
 	if rv != nil {
-		log.Printf("Response payload: %s", rv.Payload)
+		log.Printf("Response payload: %s :: %#v", rv.Payload, rv.Payload)
 	}
 
 	m = Metric{
-		Fqdn:    uint8(rv.Payload[0]),
-		Service: uint8(rv.Payload[1]),
-		Key:     uint8(rv.Payload[2]),
+		Fqdn:    rv.Payload[0],
+		Service: rv.Payload[1],
+		Key:     rv.Payload[2],
 		Value:   "T",
 	}
 
